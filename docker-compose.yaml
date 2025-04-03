@@ -18,14 +18,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
   # Database Initialization Container
   init-db:
     image: postgres:14
     container_name: guacamole-init-db
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     volumes:
       - ./init/01-schema.sql:/schema/01-schema.sql
       - ./init/02-create-admin-user.sql:/schema/02-create-admin-user.sql
@@ -60,6 +58,9 @@ services:
       - RESOLUTION=1280x720x24
       - ENABLE_AUDIO=true
       - PULSE_SERVER=127.0.0.1
+      - VNC_PASSWORD=passwd
+    ports:
+      - "5900:5900"  # Expose VNC port for debugging
     volumes:
       - chrome_data:/home/user/data
     networks:
@@ -74,14 +75,10 @@ services:
     image: guacamole/guacamole:1.5.0
     container_name: guacamole-web
     depends_on:
-      postgres:
-        condition: service_healthy
-      guacd:
-        condition: service_healthy
-      init-db:
-        condition: service_completed_successfully
-      chrome:
-        condition: service_healthy
+      - postgres
+      - guacd
+      - init-db
+      - chrome
     environment:
       GUACD_HOSTNAME: guacd
       POSTGRES_HOSTNAME: postgres
