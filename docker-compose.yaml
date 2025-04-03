@@ -95,14 +95,9 @@ services:
     restart: always
     networks:
       - guacamole_network
-    extra_hosts:
-      - "chrome:172.19.0.3"
 networks:
   guacamole_network:
     driver: bridge
-    ipam:
-      config:
-        - subnet: 172.19.0.0/16
 volumes:
   postgres_data:
   chrome_data:
