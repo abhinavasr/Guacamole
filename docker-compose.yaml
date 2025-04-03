@@ -19,7 +19,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-
   # Database Initialization Container
   init-db:
     image: postgres:14
@@ -32,11 +31,11 @@ services:
       - ./init/02-create-admin-user.sql:/schema/02-create-admin-user.sql
       - ./init/03-user-attribute.sql:/schema/03-user-attribute.sql
       - ./init/init-db.sh:/init-db.sh
+      - ./init/04-create-chrome-connection.sql:/schema/04-create-chrome-connection.sql
     command: ["/bin/bash", "/init-db.sh"]
     networks:
       - guacamole_network
     restart: "no"
-
   # Guacamole Daemon (guacd)
   guacd:
     image: guacamole/guacd:1.5.0
@@ -51,7 +50,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-
   # Chrome Browser with VNC
   chrome:
     image: nkpro/chrome-vnc:latest
@@ -59,6 +57,10 @@ services:
     restart: always
     environment:
       - RESOLUTION=1280x720x24
+      - ENABLE_AUDIO=true
+      - PULSE_SERVER=127.0.0.1
+    volumes:
+      - chrome_data:/home/user/data
     networks:
       - guacamole_network
     healthcheck:
@@ -66,7 +68,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-
   # Guacamole Web Application
   guacamole:
     image: guacamole/guacamole:1.5.0
@@ -86,15 +87,17 @@ services:
       POSTGRES_DATABASE: guacamole_db
       POSTGRES_USER: guacamole_user
       POSTGRES_PASSWORD: guacamole_password
+      GUACAMOLE_HOME: /config
+    volumes:
+      - ./config:/config
     ports:
       - "5000:8080"
     restart: always
     networks:
       - guacamole_network
-
 networks:
   guacamole_network:
     driver: bridge
-
 volumes:
   postgres_data:
+  chrome_data:
