@@ -50,6 +50,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   # Chrome Browser with VNC
   chrome:
     image: consol/ubuntu-xfce-vnc:latest
@@ -79,6 +81,8 @@ services:
         echo 'Starting Chrome VNC container...' &&
         sleep 10 &&
         /dockerstartup/vnc_startup.sh"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   # Guacamole Web Application
   guacamole:
     image: guacamole/guacamole:1.5.0
@@ -102,6 +106,8 @@ services:
     restart: always
     networks:
       - guacamole_network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 networks:
   guacamole_network:
     driver: bridge

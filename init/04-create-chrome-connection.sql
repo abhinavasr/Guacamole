@@ -18,7 +18,7 @@ BEGIN
     -- Add the required parameters for the Chrome Browser connection
     INSERT INTO guacamole_connection_parameter (connection_id, parameter_name, parameter_value)
     VALUES
-        (chrome_connection_id, 'hostname', 'chrome'),
+        (chrome_connection_id, 'hostname', 'host.docker.internal'),
         (chrome_connection_id, 'port', '5901'),
         (chrome_connection_id, 'password', 'passwd'),
         (chrome_connection_id, 'color-depth', '24'),
