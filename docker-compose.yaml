@@ -30,8 +30,9 @@ services:
       - ./init/01-schema.sql:/schema/01-schema.sql
       - ./init/02-create-admin-user.sql:/schema/02-create-admin-user.sql
       - ./init/03-user-attribute.sql:/schema/03-user-attribute.sql
-      - ./init/init-db.sh:/init-db.sh
       - ./init/04-create-chrome-connection.sql:/schema/04-create-chrome-connection.sql
+      - ./init/05-connection-attribute.sql:/schema/05-connection-attribute.sql
+      - ./init/init-db.sh:/init-db.sh
     command: ["/bin/bash", "/init-db.sh"]
     networks:
       - guacamole_network
