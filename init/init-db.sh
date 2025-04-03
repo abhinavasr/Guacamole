@@ -20,7 +20,7 @@ done
 echo "PostgreSQL is up and ready - executing schema scripts"
 
 # Execute schema scripts with error handling
-for SCRIPT in /schema/01-schema.sql /schema/02-create-admin-user.sql /schema/03-user-attribute.sql /schema/04-fix-permissions.sql; do
+for SCRIPT in /schema/01-schema.sql /schema/02-create-admin-user.sql /schema/03-user-attribute.sql; do
   if [ -f "$SCRIPT" ]; then
     echo "Executing $SCRIPT..."
     if PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f "$SCRIPT"; then
@@ -35,6 +35,39 @@ for SCRIPT in /schema/01-schema.sql /schema/02-create-admin-user.sql /schema/03-
   fi
 done
 
+# Directly apply admin permissions without requiring a separate file
+echo "Applying admin permissions directly..."
+PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db << 'EOF'
+-- Grant system permissions to guacadmin
+INSERT INTO guacamole_system_permission (entity_id, permission)
+SELECT entity_id, permission::guacamole_system_permission_type
+FROM (
+    SELECT entity_id, 'ADMINISTER' AS permission
+    FROM guacamole_entity
+    WHERE name = 'guacadmin' AND type = 'USER'
+) AS permissions
+WHERE NOT EXISTS (
+    SELECT 1 FROM guacamole_system_permission
+    WHERE entity_id = permissions.entity_id
+    AND permission = permissions.permission::guacamole_system_permission_type
+);
+
+-- Grant create connection permissions
+INSERT INTO guacamole_system_permission (entity_id, permission)
+SELECT entity_id, permission::guacamole_system_permission_type
+FROM (
+    SELECT entity_id, 'CREATE_CONNECTION' AS permission
+    FROM guacamole_entity
+    WHERE name = 'guacadmin' AND type = 'USER'
+) AS permissions
+WHERE NOT EXISTS (
+    SELECT 1 FROM guacamole_system_permission
+    WHERE entity_id = permissions.entity_id
+    AND permission = permissions.permission::guacamole_system_permission_type
+);
+EOF
+
+echo "Admin permissions applied successfully"
 echo "Schema initialization completed successfully"
 echo "Guacamole database is now ready for use"
 exit 0
