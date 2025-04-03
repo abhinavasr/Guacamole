@@ -1,0 +1,104 @@
+version: '3'
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14
+    container_name: guacamole-postgres
+    environment:
+      POSTGRES_DB: guacamole_db
+      POSTGRES_USER: guacamole_user
+      POSTGRES_PASSWORD: guacamole_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    network_mode: "host"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U guacamole_user -d guacamole_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  
+  # Database Initialization Container
+  init-db:
+    image: guacamole/guacamole:1.5.0
+    container_name: guacamole-init-db
+    depends_on:
+      - postgres
+    volumes:
+      - ./init:/init
+    command: >
+      /bin/sh -c "
+        sleep 10 &&
+        /opt/guacamole/bin/initdb.sh --postgres > /init/initdb.sql &&
+        cat /init/01-schema.sql /init/02-create-admin-user.sql /init/03-user-attribute.sql /init/04-create-chrome-connection.sql /init/05-connection-attribute.sql /init/06-cleanup-duplicate-connections.sql > /init/combined.sql &&
+        PGPASSWORD=guacamole_password psql -h localhost -U guacamole_user -d guacamole_db -f /init/combined.sql
+      "
+    network_mode: "host"
+    restart: "no"
+  
+  # Guacamole Daemon (guacd)
+  guacd:
+    image: guacamole/guacd:1.5.0
+    container_name: guacamole-daemon
+    restart: always
+    network_mode: "host"
+    volumes:
+      - ./config:/config
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "4822"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+  
+  # Chrome Browser with VNC
+  chrome:
+    image: consol/ubuntu-xfce-vnc:latest
+    container_name: chrome
+    hostname: chrome
+    restart: always
+    environment:
+      - VNC_RESOLUTION=1280x720
+      - VNC_PW=passwd
+      - VNC_VIEW_ONLY=false
+      - VNC_COL_DEPTH=24
+    network_mode: "host"
+    volumes:
+      - chrome_data:/headless/Documents
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "5901"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    # Add a longer delay to ensure VNC server is fully started
+    command: >
+      bash -c "
+        echo 'Starting Chrome VNC container...' &&
+        sleep 30 &&
+        /dockerstartup/vnc_startup.sh &&
+        echo 'VNC server started and ready for connections' &&
+        tail -f /dev/null"
+  
+  # Guacamole Web Application
+  guacamole:
+    image: guacamole/guacamole:1.5.0
+    container_name: guacamole-web
+    depends_on:
+      - postgres
+      - guacd
+      - init-db
+      - chrome
+    environment:
+      GUACD_HOSTNAME: localhost
+      POSTGRES_HOSTNAME: localhost
+      POSTGRES_DATABASE: guacamole_db
+      POSTGRES_USER: guacamole_user
+      POSTGRES_PASSWORD: guacamole_password
+      GUACAMOLE_HOME: /config
+    volumes:
+      - ./config:/config
+    network_mode: "host"
+    restart: always
+
+volumes:
+  postgres_data:
+  chrome_data:
