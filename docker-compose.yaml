@@ -16,6 +16,12 @@ services:
     restart: always
     networks:
       - guacamole_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   # Guacamole Daemon (guacd)
   guacd:
@@ -26,14 +32,21 @@ services:
       - guacamole_network
     volumes:
       - ./config:/config
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "4822"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   # Guacamole Web Application
   guacamole:
     image: guacamole/guacamole:1.5.0
     container_name: guacamole-web
     depends_on:
-      - guacd
-      - mysql
+      mysql:
+        condition: service_healthy
+      guacd:
+        condition: service_healthy
     environment:
       GUACD_HOSTNAME: guacd
       MYSQL_HOSTNAME: mysql
