@@ -19,6 +19,7 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+
   # Database Initialization Container
   init-db:
     image: postgres:14
@@ -35,6 +36,7 @@ services:
     networks:
       - guacamole_network
     restart: "no"
+
   # Guacamole Daemon (guacd)
   guacd:
     image: guacamole/guacd:1.5.0
@@ -49,6 +51,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+
+  # Chrome Browser with VNC
+  chrome:
+    image: nkpro/chrome-vnc:latest
+    container_name: guacamole-chrome
+    restart: always
+    environment:
+      - RESOLUTION=1280x720x24
+    networks:
+      - guacamole_network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "5900"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   # Guacamole Web Application
   guacamole:
     image: guacamole/guacamole:1.5.0
@@ -60,6 +78,8 @@ services:
         condition: service_healthy
       init-db:
         condition: service_completed_successfully
+      chrome:
+        condition: service_healthy
     environment:
       GUACD_HOSTNAME: guacd
       POSTGRES_HOSTNAME: postgres
@@ -71,8 +91,10 @@ services:
     restart: always
     networks:
       - guacamole_network
+
 networks:
   guacamole_network:
     driver: bridge
+
 volumes:
   postgres_data:

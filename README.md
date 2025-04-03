@@ -9,6 +9,7 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
 - PostgreSQL database for authentication and connection storage
 - Complete initialization scripts for the database
 - Configuration files for Guacamole
+- Integrated Chrome browser accessible via VNC
 
 ## Quick Start
 
@@ -28,6 +29,18 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
 4. Login with default credentials:
    - Username: `guacadmin`
    - Password: `guacadmin`
+
+5. To connect to the Chrome browser:
+   - Go to Settings > Connections
+   - Click "New Connection"
+   - Fill in the following:
+     - Name: Chrome Browser
+     - Protocol: VNC
+     - Hostname: chrome
+     - Port: 5900
+     - Password: passwd
+   - Click "Save"
+   - Go back to Home and click on your new Chrome connection
 
 ## Docker Commands Reference
 
@@ -55,6 +68,7 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
   docker logs guacamole-postgres
   docker logs guacamole-daemon
   docker logs guacamole-init-db
+  docker logs guacamole-chrome
   
   # Follow logs in real-time
   docker logs -f guacamole-web
@@ -86,6 +100,7 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
   ```bash
   docker exec -it guacamole-web ping postgres
   docker exec -it guacamole-web ping guacd
+  docker exec -it guacamole-web ping chrome
   ```
 
 ## Understanding Initialization Logs
@@ -102,6 +117,31 @@ These errors are normal and expected when running the initialization scripts mul
 3. The scripts are trying to create them again
 
 As long as the initialization completes with "Schema initialization completed successfully", Guacamole will work properly.
+
+## Chrome Browser Container
+
+The integrated Chrome browser container provides a full Chrome/Chromium browser accessible via VNC through Guacamole.
+
+### Chrome Container Details
+
+- **Container name**: guacamole-chrome
+- **Default resolution**: 1280x720
+- **VNC port**: 5900
+- **Default credentials**:
+  - Username: user
+  - Password: passwd
+  - VNC Password: passwd
+
+### Customizing Chrome Container
+
+You can customize the Chrome container by modifying the environment variables in the docker-compose.yaml file:
+
+```yaml
+chrome:
+  image: nkpro/chrome-vnc:latest
+  environment:
+    - RESOLUTION=1920x1080x24  # Change resolution
+```
 
 ## Setting Up VNC Connections
 
@@ -122,6 +162,7 @@ After logging in to Guacamole:
 For production use, please change the default passwords in:
 - `docker-compose.yaml` (PostgreSQL passwords)
 - After first login, change the default Guacamole admin password
+- Change the default Chrome container VNC password
 
 ## License
 
