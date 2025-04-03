@@ -28,12 +28,7 @@ BEGIN
         (chrome_connection_id, 'enable-audio', 'false'),
         (chrome_connection_id, 'create-recording-path', 'false'),
         (chrome_connection_id, 'enable-sftp', 'false'),
-        (chrome_connection_id, 'resize-method', 'display-update'),
-        (chrome_connection_id, 'dest-host', ''),
-        (chrome_connection_id, 'dest-port', ''),
-        (chrome_connection_id, 'recording-exclude-output', 'true'),
-        (chrome_connection_id, 'recording-exclude-mouse', 'true'),
-        (chrome_connection_id, 'recording-include-keys', 'false');
+        (chrome_connection_id, 'resize-method', 'display-update');
 
     -- Grant access to the admin user
     INSERT INTO guacamole_connection_permission (entity_id, connection_id, permission)

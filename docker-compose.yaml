@@ -96,7 +96,7 @@ services:
     networks:
       - guacamole_network
     extra_hosts:
-      - "chrome:172.19.0.2"
+      - "chrome:172.19.0.3"
 networks:
   guacamole_network:
     driver: bridge
