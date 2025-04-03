@@ -52,19 +52,20 @@ services:
       retries: 3
   # Chrome Browser with VNC
   chrome:
-    image: kasmweb/chrome:latest
-    container_name: guacamole-chrome
+    image: consol/ubuntu-xfce-vnc:latest
+    container_name: chrome
     hostname: chrome
     restart: always
     environment:
+      - VNC_RESOLUTION=1280x720
       - VNC_PW=passwd
-      - KASM_VNC_PORT=5901
-      - STARTUP_SCRIPT=echo "VNC server is ready"
+      - VNC_VIEW_ONLY=false
+      - VNC_COL_DEPTH=24
     ports:
       - "5901:5901"  # VNC port
       - "6901:6901"  # noVNC port
     volumes:
-      - chrome_data:/home
+      - chrome_data:/headless/Documents
     networks:
       - guacamole_network
     healthcheck:
@@ -76,8 +77,8 @@ services:
     command: >
       bash -c "
         echo 'Starting Chrome VNC container...' &&
-        sleep 5 &&
-        /dockerstartup/kasm_default_profile.sh /dockerstartup/vnc_startup.sh"
+        sleep 10 &&
+        /dockerstartup/vnc_startup.sh"
   # Guacamole Web Application
   guacamole:
     image: guacamole/guacamole:1.5.0

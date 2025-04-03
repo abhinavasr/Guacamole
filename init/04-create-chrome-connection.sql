@@ -25,7 +25,7 @@ BEGIN
         (chrome_connection_id, 'cursor', 'local'),
         (chrome_connection_id, 'swap-red-blue', 'false'),
         (chrome_connection_id, 'read-only', 'false'),
-        (chrome_connection_id, 'enable-audio', 'false'),
+        (chrome_connection_id, 'enable-audio', 'true'),
         (chrome_connection_id, 'resize-method', 'display-update'),
         (chrome_connection_id, 'security', 'any'),
         (chrome_connection_id, 'ignore-cert', 'true'),
