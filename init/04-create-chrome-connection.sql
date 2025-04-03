@@ -25,8 +25,12 @@ BEGIN
         (chrome_connection_id, 'cursor', 'local'),
         (chrome_connection_id, 'swap-red-blue', 'false'),
         (chrome_connection_id, 'read-only', 'false'),
-        (chrome_connection_id, 'enable-audio', 'true'),
-        (chrome_connection_id, 'resize-method', 'display-update');
+        (chrome_connection_id, 'enable-audio', 'false'),
+        (chrome_connection_id, 'resize-method', 'display-update'),
+        (chrome_connection_id, 'security', 'any'),
+        (chrome_connection_id, 'ignore-cert', 'true'),
+        (chrome_connection_id, 'autoretry', '10'),
+        (chrome_connection_id, 'clipboard-encoding', 'UTF-8');
 
     -- Grant access to the admin user
     INSERT INTO guacamole_connection_permission (entity_id, connection_id, permission)
