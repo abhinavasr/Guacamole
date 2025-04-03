@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: guacamole-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: guacamole_root_password
+      MYSQL_DATABASE: guacamole_db
+      MYSQL_USER: guacamole_user
+      MYSQL_PASSWORD: guacamole_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d
+    restart: always
+    networks:
+      - guacamole_network
+
+  # Guacamole Daemon (guacd)
+  guacd:
+    image: guacamole/guacd:1.5.0
+    container_name: guacamole-daemon
+    restart: always
+    networks:
+      - guacamole_network
+    volumes:
+      - ./config:/config
+
+  # Guacamole Web Application
+  guacamole:
+    image: guacamole/guacamole:1.5.0
+    container_name: guacamole-web
+    depends_on:
+      - guacd
+      - mysql
+    environment:
+      GUACD_HOSTNAME: guacd
+      MYSQL_HOSTNAME: mysql
+      MYSQL_DATABASE: guacamole_db
+      MYSQL_USER: guacamole_user
+      MYSQL_PASSWORD: guacamole_password
+    ports:
+      - "8080:8080"
+    restart: always
+    networks:
+      - guacamole_network
+
+networks:
+  guacamole_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
