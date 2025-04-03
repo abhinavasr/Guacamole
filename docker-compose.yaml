@@ -30,6 +30,7 @@ services:
       - ./init/03-user-attribute.sql:/schema/03-user-attribute.sql
       - ./init/04-create-chrome-connection.sql:/schema/04-create-chrome-connection.sql
       - ./init/05-connection-attribute.sql:/schema/05-connection-attribute.sql
+      - ./init/06-cleanup-duplicate-connections.sql:/schema/06-cleanup-duplicate-connections.sql
       - ./init/init-db.sh:/init-db.sh
     command: ["/bin/bash", "/init-db.sh"]
     networks:
@@ -51,22 +52,22 @@ services:
       retries: 3
   # Chrome Browser with VNC
   chrome:
-    image: nkpro/chrome-vnc:latest
+    image: consol/ubuntu-xfce-vnc:latest
     container_name: guacamole-chrome
     restart: always
     environment:
-      - RESOLUTION=1280x720x24
-      - ENABLE_AUDIO=true
-      - PULSE_SERVER=127.0.0.1
-      - VNC_PASSWORD=passwd
+      - VNC_RESOLUTION=1280x720
+      - VNC_PW=passwd
+      - VNC_VIEW_ONLY=false
+      - REFRESHED_AT=2025-04-03
     ports:
-      - "5900:5900"  # Expose VNC port for debugging
+      - "5901:5901"  # VNC port
     volumes:
-      - chrome_data:/home/user/data
+      - chrome_data:/headless/Documents
     networks:
       - guacamole_network
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "5900"]
+      test: ["CMD", "nc", "-z", "localhost", "5901"]
       interval: 10s
       timeout: 5s
       retries: 3
