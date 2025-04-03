@@ -1,12 +1,12 @@
-# Guacamole Docker with MySQL Backend and VNC Support
+# Guacamole Docker with PostgreSQL Backend and VNC Support
 
-This repository contains a Docker Compose setup for Apache Guacamole with MySQL backend and VNC support.
+This repository contains a Docker Compose setup for Apache Guacamole with PostgreSQL backend and VNC support.
 
 ## Features
 
 - Apache Guacamole web application
 - Guacamole daemon (guacd) with VNC protocol support
-- MySQL database for authentication and connection storage
+- PostgreSQL database for authentication and connection storage
 - Complete initialization scripts for the database
 - Configuration files for Guacamole
 
@@ -14,7 +14,7 @@ This repository contains a Docker Compose setup for Apache Guacamole with MySQL 
 
 1. Clone this repository
 2. Run `docker-compose up -d`
-3. Access Guacamole at http://localhost:8080/
+3. Access Guacamole at http://localhost:5000/guacamole/
 4. Login with default credentials:
    - Username: `guacadmin`
    - Password: `guacadmin`
@@ -22,7 +22,7 @@ This repository contains a Docker Compose setup for Apache Guacamole with MySQL 
 ## Security Notice
 
 For production use, please change the default passwords in:
-- `docker-compose.yaml` (MySQL passwords)
+- `docker-compose.yaml` (PostgreSQL passwords)
 - After first login, change the default Guacamole admin password
 
 ## Documentation
