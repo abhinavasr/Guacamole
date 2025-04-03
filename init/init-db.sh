@@ -20,7 +20,7 @@ done
 echo "PostgreSQL is up and ready - executing schema scripts"
 
 # Execute schema scripts with error handling
-for SCRIPT in /schema/01-schema.sql /schema/02-create-admin-user.sql /schema/03-user-attribute.sql; do
+for SCRIPT in /schema/01-schema.sql /schema/02-create-admin-user.sql /schema/03-user-attribute.sql /schema/04-fix-permissions.sql; do
   if [ -f "$SCRIPT" ]; then
     echo "Executing $SCRIPT..."
     if PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f "$SCRIPT"; then

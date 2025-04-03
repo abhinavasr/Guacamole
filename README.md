@@ -10,6 +10,7 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
 - Complete initialization scripts for the database
 - Configuration files for Guacamole
 - Integrated Chrome browser accessible via VNC
+- Automatic admin permissions setup
 
 ## Quick Start
 
@@ -41,6 +42,25 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
      - Password: passwd
    - Click "Save"
    - Go back to Home and click on your new Chrome connection
+
+## Production Deployment Notes
+
+When deploying in production:
+
+1. The setup automatically grants admin permissions to the guacadmin user
+2. If deploying behind a reverse proxy, ensure your proxy is configured to pass the correct path (/guacamole/)
+3. For security, change all default passwords after initial setup
+4. If you're using a domain (like car.abhinava.xyz), access Guacamole at https://your-domain.com/guacamole/
+
+### Troubleshooting Production Deployments
+
+If you don't see the Settings option in the top-right menu:
+- The initialization script should automatically grant admin permissions
+- If issues persist, you can manually run the permissions fix:
+  ```bash
+  cat init/04-fix-permissions.sql | docker exec -i guacamole-postgres psql -U guacamole_user -d guacamole_db
+  docker restart guacamole-web
+  ```
 
 ## Docker Commands Reference
 
