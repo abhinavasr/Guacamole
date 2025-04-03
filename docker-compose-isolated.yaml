@@ -112,7 +112,6 @@ services:
 
 networks:
   guacamole_network:
-    name: guacamole_internal
     driver: bridge
     ipam:
       config:
