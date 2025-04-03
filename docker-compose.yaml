@@ -54,6 +54,7 @@ services:
   chrome:
     image: consol/ubuntu-xfce-vnc:latest
     container_name: guacamole-chrome
+    hostname: chrome
     restart: always
     environment:
       - VNC_RESOLUTION=1280x720
@@ -94,9 +95,14 @@ services:
     restart: always
     networks:
       - guacamole_network
+    extra_hosts:
+      - "chrome:172.19.0.2"
 networks:
   guacamole_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.0.0/16
 volumes:
   postgres_data:
   chrome_data:
