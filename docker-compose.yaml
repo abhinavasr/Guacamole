@@ -52,6 +52,7 @@ services:
       POSTGRES_DATABASE: guacamole_db
       POSTGRES_USER: guacamole_user
       POSTGRES_PASSWORD: guacamole_password
+      POSTGRES_AUTO_CREATE_ACCOUNTS: "true"
     ports:
       - "5000:8080"
     restart: always
