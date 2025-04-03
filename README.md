@@ -11,8 +11,9 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
 - Configuration files for Guacamole
 - Integrated Chrome browser accessible via VNC
 - Automatic admin permissions setup
+- Audio streaming support
 
-## Quick Start
+## Quick Start (Simplified Configuration)
 
 1. Clone this repository:
    ```bash
@@ -20,28 +21,36 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
    cd Guacamole
    ```
 
-2. Start the containers:
+2. Start the containers using the simplified configuration:
    ```bash
-   docker-compose up -d
+   docker-compose -f docker-compose-simplified.yaml up -d
    ```
 
-3. Access Guacamole at http://localhost:5000/guacamole/
+3. Access Guacamole at http://localhost:5000/
 
 4. Login with default credentials:
    - Username: `guacadmin`
    - Password: `guacadmin`
 
-5. To connect to the Chrome browser:
-   - Go to Settings > Connections
-   - Click "New Connection"
-   - Fill in the following:
-     - Name: Chrome Browser
-     - Protocol: VNC
-     - Hostname: chrome
-     - Port: 5900
-     - Password: passwd
-   - Click "Save"
-   - Go back to Home and click on your new Chrome connection
+5. The Chrome browser connection will be automatically created and available on the home screen.
+
+## Why Use the Simplified Configuration?
+
+The simplified configuration includes several improvements:
+- Fixed VNC connectivity issues
+- Longer startup delays to ensure proper initialization
+- Fixed subnet configuration for consistent networking
+- Chrome as the default connection
+- Audio streaming support
+- Enhanced connection parameters for better compatibility
+
+## Alternative Configuration (Original)
+
+If you prefer to use the original configuration:
+
+```bash
+docker-compose up -d
+```
 
 ## Production Deployment Notes
 
@@ -66,19 +75,19 @@ If you don't see the Settings option in the top-right menu:
 
 ### Basic Commands
 
-- **Start all containers**:
+- **Start all containers with simplified configuration**:
   ```bash
-  docker-compose up -d
+  docker-compose -f docker-compose-simplified.yaml up -d
   ```
 
 - **Stop all containers**:
   ```bash
-  docker-compose down
+  docker-compose -f docker-compose-simplified.yaml down
   ```
 
 - **Stop and remove all containers and volumes** (clean start):
   ```bash
-  docker-compose down -v
+  docker-compose -f docker-compose-simplified.yaml down -v
   ```
 
 - **View container logs**:
@@ -88,7 +97,7 @@ If you don't see the Settings option in the top-right menu:
   docker logs guacamole-postgres
   docker logs guacamole-daemon
   docker logs guacamole-init-db
-  docker logs guacamole-chrome
+  docker logs chrome
   
   # Follow logs in real-time
   docker logs -f guacamole-web
@@ -96,7 +105,7 @@ If you don't see the Settings option in the top-right menu:
 
 - **Check container status**:
   ```bash
-  docker-compose ps
+  docker-compose -f docker-compose-simplified.yaml ps
   ```
 
 ### Troubleshooting Commands
@@ -108,7 +117,7 @@ If you don't see the Settings option in the top-right menu:
   
 - **Restart a specific container**:
   ```bash
-  docker-compose restart guacamole-web
+  docker-compose -f docker-compose-simplified.yaml restart guacamole-web
   ```
 
 - **Access PostgreSQL database**:
@@ -144,9 +153,9 @@ The integrated Chrome browser container provides a full Chrome/Chromium browser 
 
 ### Chrome Container Details
 
-- **Container name**: guacamole-chrome
+- **Container name**: chrome
 - **Default resolution**: 1280x720
-- **VNC port**: 5900
+- **VNC port**: 5901
 - **Default credentials**:
   - Username: user
   - Password: passwd
@@ -154,33 +163,18 @@ The integrated Chrome browser container provides a full Chrome/Chromium browser 
 
 ### Customizing Chrome Container
 
-You can customize the Chrome container by modifying the environment variables in the docker-compose.yaml file:
+You can customize the Chrome container by modifying the environment variables in the docker-compose-simplified.yaml file:
 
 ```yaml
 chrome:
-  image: nkpro/chrome-vnc:latest
   environment:
-    - RESOLUTION=1920x1080x24  # Change resolution
+    - VNC_RESOLUTION=1920x1080  # Change resolution
 ```
-
-## Setting Up VNC Connections
-
-After logging in to Guacamole:
-
-1. Go to Settings > Connections
-2. Click "New Connection"
-3. Fill in the following:
-   - Name: (any name for your connection)
-   - Protocol: VNC
-   - Hostname: (IP address of your VNC server)
-   - Port: 5900 (default VNC port)
-   - Password: (your VNC password)
-4. Click "Save"
 
 ## Security Notice
 
 For production use, please change the default passwords in:
-- `docker-compose.yaml` (PostgreSQL passwords)
+- `docker-compose-simplified.yaml` (PostgreSQL passwords)
 - After first login, change the default Guacamole admin password
 - Change the default Chrome container VNC password
 
