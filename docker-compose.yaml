@@ -80,7 +80,7 @@ services:
     command: >
       /bin/sh -c "
         echo 'Waiting for PostgreSQL to be fully ready...' &&
-        until PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -c '\q' 2>/dev/null; do
+        until pg_isready -h postgres -U guacamole_user -d guacamole_db; do
           echo 'PostgreSQL is still initializing - waiting...'
           sleep 5
         done &&
