@@ -55,19 +55,15 @@ services:
       - "6901:6901"
     volumes:
       - chrome_data:/headless/Documents
+    # Modified healthcheck with longer start period and more retries
     healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "5901"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    # Add a longer delay to ensure VNC server is fully started
-    command: >
-      bash -c "
-        echo 'Starting Chrome VNC container...' &&
-        sleep 45 &&
-        /dockerstartup/vnc_startup.sh &&
-        echo 'VNC server started and ready for connections' &&
-        tail -f /dev/null"
+      test: ["CMD-SHELL", "pgrep -f Xvnc || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
+    # Modified command to run VNC startup directly without sleep
+    command: /dockerstartup/vnc_startup.sh
   
   # Database Initialization Container
   init-db:
