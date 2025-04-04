@@ -10,6 +10,7 @@ services:
       POSTGRES_PASSWORD: guacamole_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
     restart: always
     networks:
       - guacamole_network
@@ -65,44 +66,6 @@ services:
     # Modified command to run VNC startup directly without sleep
     command: /dockerstartup/vnc_startup.sh
   
-  # Database Initialization Container
-  init-db:
-    # Changed to postgres image which includes psql client
-    image: postgres:14
-    container_name: guacamole-init-db
-    depends_on:
-      postgres:
-        condition: service_healthy
-      chrome:
-        condition: service_healthy
-    volumes:
-      - ./init:/init
-      - ./init:/schema
-      # Add volume to access Guacamole initialization scripts
-      - guacamole_init:/opt/guacamole
-    command: >
-      /bin/sh -c "
-        echo 'Waiting for PostgreSQL to be fully ready...' &&
-        until PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -c '\q'; do
-          echo 'PostgreSQL is still initializing - waiting...'
-          sleep 5
-        done &&
-        echo 'PostgreSQL is ready!' &&
-        echo 'Getting Chrome container IP address...' &&
-        CHROME_IP=$$(getent hosts chrome | awk '{ print $$1 }') &&
-        echo \"Chrome container IP: $$CHROME_IP\" &&
-        # Copy initialization SQL files directly
-        cat /init/01-schema.sql /init/02-create-admin-user.sql /init/03-user-attribute.sql /init/05-connection-attribute.sql /init/06-cleanup-duplicate-connections.sql > /init/combined.sql &&
-        PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/combined.sql &&
-        echo 'Creating Chrome connection with IP address...' &&
-        sed \"s/CHROME_IP_ADDRESS/$$CHROME_IP/g\" /init/04-create-chrome-connection-ip.sql > /init/04-create-chrome-connection-ip-final.sql &&
-        PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/04-create-chrome-connection-ip-final.sql &&
-        echo 'Database initialization completed successfully'
-      "
-    networks:
-      - guacamole_network
-    restart: "no"
-  
   # Guacamole Web Application
   guacamole:
     image: guacamole/guacamole:1.5.0
@@ -114,8 +77,6 @@ services:
         condition: service_healthy
       chrome:
         condition: service_healthy
-      init-db:
-        condition: service_completed_successfully
     environment:
       GUACD_HOSTNAME: guacd
       POSTGRES_HOSTNAME: postgres
@@ -125,7 +86,6 @@ services:
       GUACAMOLE_HOME: /config
     volumes:
       - ./config:/config
-      - guacamole_init:/opt/guacamole
     networks:
       - guacamole_network
     ports:
@@ -142,4 +102,3 @@ networks:
 volumes:
   postgres_data:
   chrome_data:
-  guacamole_init:

@@ -1,20 +1,40 @@
 #!/bin/bash
 
-# Wait for PostgreSQL to be ready
-echo "Waiting for PostgreSQL to be ready..."
-until PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -c '\q'; do
-  echo "PostgreSQL is unavailable - sleeping"
-  sleep 1
+# This script creates a custom initialization script for PostgreSQL
+# It will be executed when the PostgreSQL container starts
+
+# Create a temporary directory for initialization files
+mkdir -p /tmp/init
+
+# Copy the schema and user creation SQL files
+cp /docker-entrypoint-initdb.d/01-schema.sql /tmp/init/
+cp /docker-entrypoint-initdb.d/02-create-admin-user.sql /tmp/init/
+cp /docker-entrypoint-initdb.d/03-user-attribute.sql /tmp/init/
+cp /docker-entrypoint-initdb.d/05-connection-attribute.sql /tmp/init/
+cp /docker-entrypoint-initdb.d/06-cleanup-duplicate-connections.sql /tmp/init/
+
+# Wait for Chrome container to be available
+echo "Waiting for Chrome container to be available..."
+until getent hosts chrome; do
+  echo "Chrome container not yet available - waiting..."
+  sleep 5
 done
 
-echo "PostgreSQL is up - executing schema scripts"
+# Get Chrome container IP address
+CHROME_IP=$(getent hosts chrome | awk '{ print $1 }')
+echo "Chrome container IP: $CHROME_IP"
 
-# Execute schema scripts
-PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /schema/01-schema.sql
-PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /schema/02-create-admin-user.sql
-PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /schema/03-user-attribute.sql
-PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /schema/05-connection-attribute.sql
-PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /schema/06-cleanup-duplicate-connections.sql
-PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /schema/04-create-chrome-connection.sql
+# Create Chrome connection SQL with proper IP address
+sed "s/CHROME_IP_ADDRESS/$CHROME_IP/g" /docker-entrypoint-initdb.d/04-create-chrome-connection-ip.sql > /tmp/init/04-chrome-connection.sql
 
-echo "Database initialization completed successfully"
+# Combine all SQL files into a single initialization file
+cat /tmp/init/01-schema.sql \
+    /tmp/init/02-create-admin-user.sql \
+    /tmp/init/03-user-attribute.sql \
+    /tmp/init/05-connection-attribute.sql \
+    /tmp/init/06-cleanup-duplicate-connections.sql \
+    /tmp/init/04-chrome-connection.sql > /docker-entrypoint-initdb.d/00-init.sql
+
+echo "Database initialization files prepared successfully"
+
+# Execute the SQL file (this will be done automatically by PostgreSQL)
