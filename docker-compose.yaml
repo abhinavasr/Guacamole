@@ -15,27 +15,11 @@ services:
       - guacamole_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U guacamole_user -d guacamole_db"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
-  # Database Initialization Container
-  init-db:
-    image: postgres:14
-    container_name: guacamole-init-db
-    depends_on:
-      - postgres
-    volumes:
-      - ./init/01-schema.sql:/schema/01-schema.sql
-      - ./init/02-create-admin-user.sql:/schema/02-create-admin-user.sql
-      - ./init/03-user-attribute.sql:/schema/03-user-attribute.sql
-      - ./init/04-create-chrome-connection.sql:/schema/04-create-chrome-connection.sql
-      - ./init/05-connection-attribute.sql:/schema/05-connection-attribute.sql
-      - ./init/06-cleanup-duplicate-connections.sql:/schema/06-cleanup-duplicate-connections.sql
-      - ./init/init-db.sh:/init-db.sh
-    command: ["/bin/bash", "/init-db.sh"]
-    networks:
-      - guacamole_network
-    restart: "no"
+      retries: 10
+      start_period: 10s
+  
   # Guacamole Daemon (guacd)
   guacd:
     image: guacamole/guacd:1.5.0
@@ -43,15 +27,16 @@ services:
     restart: always
     networks:
       - guacamole_network
+    ports:
+      - "4822:4822"
     volumes:
       - ./config:/config
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "4822"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 3
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      retries: 10
+  
   # Chrome Browser with VNC
   chrome:
     image: consol/ubuntu-xfce-vnc:latest
@@ -63,35 +48,75 @@ services:
       - VNC_PW=passwd
       - VNC_VIEW_ONLY=false
       - VNC_COL_DEPTH=24
-    ports:
-      - "5901:5901"  # VNC port
-      - "6901:6901"  # noVNC port
-    volumes:
-      - chrome_data:/headless/Documents
     networks:
       - guacamole_network
+    ports:
+      - "5901:5901"
+      - "6901:6901"
+    volumes:
+      - chrome_data:/headless/Documents
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "5901"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 3
-    # Add a small delay to ensure VNC server is fully started
+      retries: 10
+    # Add a longer delay to ensure VNC server is fully started
     command: >
       bash -c "
         echo 'Starting Chrome VNC container...' &&
-        sleep 10 &&
-        /dockerstartup/vnc_startup.sh"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+        sleep 45 &&
+        /dockerstartup/vnc_startup.sh &&
+        echo 'VNC server started and ready for connections' &&
+        tail -f /dev/null"
+  
+  # Database Initialization Container
+  init-db:
+    image: guacamole/guacamole:1.5.0
+    container_name: guacamole-init-db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chrome:
+        condition: service_healthy
+    volumes:
+      - ./init:/init
+      - ./init:/schema
+    command: >
+      /bin/sh -c "
+        echo 'Waiting for PostgreSQL to be fully ready...' &&
+        until PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -c '\q'; do
+          echo 'PostgreSQL is still initializing - waiting...'
+          sleep 5
+        done &&
+        echo 'PostgreSQL is ready!' &&
+        echo 'Getting Chrome container IP address...' &&
+        CHROME_IP=$$(getent hosts chrome | awk '{ print $$1 }') &&
+        echo \"Chrome container IP: $$CHROME_IP\" &&
+        /opt/guacamole/bin/initdb.sh --postgres > /init/initdb.sql &&
+        cat /init/01-schema.sql /init/02-create-admin-user.sql /init/03-user-attribute.sql /init/05-connection-attribute.sql /init/06-cleanup-duplicate-connections.sql > /init/combined.sql &&
+        PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/combined.sql &&
+        echo 'Creating Chrome connection with IP address...' &&
+        sed \"s/CHROME_IP_ADDRESS/$$CHROME_IP/g\" /init/04-create-chrome-connection-ip.sql > /init/04-create-chrome-connection-ip-final.sql &&
+        PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/04-create-chrome-connection-ip-final.sql &&
+        echo 'Database initialization completed successfully'
+      "
+    networks:
+      - guacamole_network
+    restart: "no"
+  
   # Guacamole Web Application
   guacamole:
     image: guacamole/guacamole:1.5.0
     container_name: guacamole-web
     depends_on:
-      - postgres
-      - guacd
-      - init-db
-      - chrome
+      postgres:
+        condition: service_healthy
+      guacd:
+        condition: service_healthy
+      chrome:
+        condition: service_healthy
+      init-db:
+        condition: service_completed_successfully
     environment:
       GUACD_HOSTNAME: guacd
       POSTGRES_HOSTNAME: postgres
@@ -101,16 +126,19 @@ services:
       GUACAMOLE_HOME: /config
     volumes:
       - ./config:/config
+    networks:
+      - guacamole_network
     ports:
       - "5000:8080"
     restart: always
-    networks:
-      - guacamole_network
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+
 networks:
   guacamole_network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
 volumes:
   postgres_data:
   chrome_data:
