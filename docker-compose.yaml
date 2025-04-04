@@ -43,7 +43,7 @@ services:
     image: consol/ubuntu-xfce-vnc:latest
     container_name: chrome
     hostname: chrome
-    restart: always
+    restart: unless-stopped
     environment:
       - VNC_RESOLUTION=1280x720
       - VNC_PW=passwd
@@ -92,6 +92,8 @@ services:
         PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/01-schema.sql &&
         echo 'Creating admin user...' &&
         PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/02-create-admin-user.sql &&
+        echo 'Setting up admin permissions...' &&
+        PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/03-admin-permissions.sql &&
         echo 'Setting up user attributes...' &&
         PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/03-user-attribute.sql &&
         echo 'Setting up connection attributes...' &&

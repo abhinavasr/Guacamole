@@ -17,7 +17,7 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
 
 ## Quick Start
 
-### For Windows Users
+### For Windows Users (Single-Click Solution)
 
 1. Clone this repository:
    ```bash
@@ -25,7 +25,7 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
    cd Guacamole
    ```
 
-2. Run the setup script:
+2. Run the setup script (single-click solution):
    ```bash
    setup.bat
    ```
@@ -35,6 +35,8 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
 4. Login with default credentials:
    - Username: `guacadmin`
    - Password: `guacadmin`
+   
+5. The Chrome Browser connection will be automatically available in your connections list
 
 ### For Linux/Mac Users
 
