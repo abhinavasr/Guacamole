@@ -66,6 +66,7 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
 
 If you're working across different operating systems or cloning this repository on a new system, you may need to ensure the initialization scripts are executable:
 
+### For Linux/Mac Users:
 ```bash
 # Make all shell scripts in the init directory executable
 chmod +x init/*.sh
@@ -74,6 +75,23 @@ chmod +x init/*.sh
 git update-index --chmod=+x init/00-init-setup.sh
 git update-index --chmod=+x init/init-db.sh
 git update-index --chmod=+x init/prepare-db.sh
+```
+
+### For Windows Users (PowerShell):
+```powershell
+# Create a simple initialization script if it doesn't exist
+if (-not (Test-Path -Path ".\init\00-init-setup.sh")) {
+    Set-Content -Path ".\init\00-init-setup.sh" -Value "#!/bin/bash`necho 'Initializing database...'"
+}
+
+# For Git to track the executable permission (run in Git Bash or WSL)
+# These commands must be run in Git Bash or WSL, not in PowerShell
+# git update-index --chmod=+x init/00-init-setup.sh
+# git update-index --chmod=+x init/init-db.sh
+# git update-index --chmod=+x init/prepare-db.sh
+
+# Alternative: Use attrib to remove read-only attribute (PowerShell)
+attrib -R .\init\*.sh
 ```
 
 This is particularly important when switching between Windows and Linux/Mac environments, as Windows doesn't maintain the executable bit that Linux and Mac require for shell scripts.
