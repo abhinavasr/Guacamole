@@ -15,9 +15,10 @@ services:
       - guacamole_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U guacamole_user -d guacamole_db"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 10s
   
   # Guacamole Daemon (guacd)
   guacd:
@@ -32,9 +33,9 @@ services:
       - ./config:/config
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "4822"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 3
+      retries: 10
   
   # Chrome Browser with VNC
   chrome:
@@ -56,9 +57,9 @@ services:
       - chrome_data:/headless/Documents
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "5901"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 3
+      retries: 10
     # Add a longer delay to ensure VNC server is fully started
     command: >
       bash -c "
@@ -73,9 +74,12 @@ services:
     image: guacamole/guacamole:1.5.0
     container_name: guacamole-web
     depends_on:
-      - postgres
-      - guacd
-      - chrome
+      postgres:
+        condition: service_healthy
+      guacd:
+        condition: service_healthy
+      chrome:
+        condition: service_healthy
     environment:
       GUACD_HOSTNAME: guacd
       POSTGRES_HOSTNAME: postgres
@@ -96,15 +100,21 @@ services:
     image: guacamole/guacamole:1.5.0
     container_name: guacamole-init-db
     depends_on:
-      - postgres
-      - chrome
+      postgres:
+        condition: service_healthy
+      chrome:
+        condition: service_healthy
     volumes:
       - ./init:/init
       - ./init:/schema
     command: >
       /bin/sh -c "
-        echo 'Waiting for PostgreSQL and Chrome to start...' &&
-        sleep 60 &&
+        echo 'Waiting for PostgreSQL to be fully ready...' &&
+        until PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -c '\q'; do
+          echo 'PostgreSQL is still initializing - waiting...'
+          sleep 5
+        done &&
+        echo 'PostgreSQL is ready!' &&
         echo 'Getting Chrome container IP address...' &&
         CHROME_IP=$$(getent hosts chrome | awk '{ print $$1 }') &&
         echo \"Chrome container IP: $$CHROME_IP\" &&
@@ -114,7 +124,7 @@ services:
         echo 'Creating Chrome connection with IP address...' &&
         sed \"s/CHROME_IP_ADDRESS/$$CHROME_IP/g\" /init/04-create-chrome-connection-ip.sql > /init/04-create-chrome-connection-ip-final.sql &&
         PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/04-create-chrome-connection-ip-final.sql &&
-        echo 'Database initialization completed'
+        echo 'Database initialization completed successfully'
       "
     networks:
       - guacamole_network

@@ -15,32 +15,10 @@ services:
       - guacamole_network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U guacamole_user -d guacamole_db"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 5
-  
-  # Database Initialization Container
-  init-db:
-    image: guacamole/guacamole:1.5.0
-    container_name: guacamole-init-db
-    depends_on:
-      - postgres
-    volumes:
-      - ./init:/init
-      - ./init:/schema
-    command: >
-      /bin/sh -c "
-        echo 'Waiting for PostgreSQL to start...' &&
-        sleep 20 &&
-        /opt/guacamole/bin/initdb.sh --postgres > /init/initdb.sql &&
-        cat /init/01-schema.sql /init/02-create-admin-user.sql /init/03-user-attribute.sql /init/05-connection-attribute.sql /init/06-cleanup-duplicate-connections.sql > /init/combined.sql &&
-        PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/combined.sql &&
-        PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/04-create-chrome-connection.sql &&
-        echo 'Database initialization completed'
-      "
-    networks:
-      - guacamole_network
-    restart: "no"
+      retries: 10
+      start_period: 10s
   
   # Guacamole Daemon (guacd)
   guacd:
@@ -55,9 +33,9 @@ services:
       - ./config:/config
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "4822"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 3
+      retries: 10
   
   # Chrome Browser with VNC
   chrome:
@@ -79,9 +57,9 @@ services:
       - chrome_data:/headless/Documents
     healthcheck:
       test: ["CMD", "nc", "-z", "localhost", "5901"]
-      interval: 10s
+      interval: 5s
       timeout: 5s
-      retries: 3
+      retries: 10
     # Add a longer delay to ensure VNC server is fully started
     command: >
       bash -c "
@@ -91,15 +69,49 @@ services:
         echo 'VNC server started and ready for connections' &&
         tail -f /dev/null"
   
+  # Database Initialization Container
+  init-db:
+    image: guacamole/guacamole:1.5.0
+    container_name: guacamole-init-db
+    depends_on:
+      postgres:
+        condition: service_healthy
+      chrome:
+        condition: service_healthy
+    volumes:
+      - ./init:/init
+      - ./init:/schema
+    command: >
+      /bin/sh -c "
+        echo 'Waiting for PostgreSQL to be fully ready...' &&
+        until PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -c '\q'; do
+          echo 'PostgreSQL is still initializing - waiting...'
+          sleep 5
+        done &&
+        echo 'PostgreSQL is ready!' &&
+        /opt/guacamole/bin/initdb.sh --postgres > /init/initdb.sql &&
+        cat /init/01-schema.sql /init/02-create-admin-user.sql /init/03-user-attribute.sql /init/05-connection-attribute.sql /init/06-cleanup-duplicate-connections.sql > /init/combined.sql &&
+        PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/combined.sql &&
+        PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/04-create-chrome-connection.sql &&
+        echo 'Database initialization completed successfully'
+      "
+    networks:
+      - guacamole_network
+    restart: "no"
+  
   # Guacamole Web Application
   guacamole:
     image: guacamole/guacamole:1.5.0
     container_name: guacamole-web
     depends_on:
-      - postgres
-      - guacd
-      - init-db
-      - chrome
+      postgres:
+        condition: service_healthy
+      guacd:
+        condition: service_healthy
+      chrome:
+        condition: service_healthy
+      init-db:
+        condition: service_completed_successfully
     environment:
       GUACD_HOSTNAME: guacd
       POSTGRES_HOSTNAME: postgres
