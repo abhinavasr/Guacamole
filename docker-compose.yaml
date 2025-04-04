@@ -67,7 +67,8 @@ services:
   
   # Database Initialization Container
   init-db:
-    image: guacamole/guacamole:1.5.0
+    # Changed to postgres image which includes psql client
+    image: postgres:14
     container_name: guacamole-init-db
     depends_on:
       postgres:
@@ -77,6 +78,8 @@ services:
     volumes:
       - ./init:/init
       - ./init:/schema
+      # Add volume to access Guacamole initialization scripts
+      - guacamole_init:/opt/guacamole
     command: >
       /bin/sh -c "
         echo 'Waiting for PostgreSQL to be fully ready...' &&
@@ -88,7 +91,7 @@ services:
         echo 'Getting Chrome container IP address...' &&
         CHROME_IP=$$(getent hosts chrome | awk '{ print $$1 }') &&
         echo \"Chrome container IP: $$CHROME_IP\" &&
-        /opt/guacamole/bin/initdb.sh --postgres > /init/initdb.sql &&
+        # Copy initialization SQL files directly
         cat /init/01-schema.sql /init/02-create-admin-user.sql /init/03-user-attribute.sql /init/05-connection-attribute.sql /init/06-cleanup-duplicate-connections.sql > /init/combined.sql &&
         PGPASSWORD=guacamole_password psql -h postgres -U guacamole_user -d guacamole_db -f /init/combined.sql &&
         echo 'Creating Chrome connection with IP address...' &&
@@ -122,6 +125,7 @@ services:
       GUACAMOLE_HOME: /config
     volumes:
       - ./config:/config
+      - guacamole_init:/opt/guacamole
     networks:
       - guacamole_network
     ports:
@@ -138,3 +142,4 @@ networks:
 volumes:
   postgres_data:
   chrome_data:
+  guacamole_init:
