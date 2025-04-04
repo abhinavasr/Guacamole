@@ -82,6 +82,9 @@ This is particularly important when switching between Windows and Linux/Mac envi
 
 This optimized configuration includes several improvements:
 
+- **Single-Click Deployment**: Complete setup with just one command for Windows users
+- **Enhanced Admin Permissions**: Robust admin user setup with full permissions guaranteed
+- **Automatic VNC Connection**: Chrome browser connection automatically created and configured
 - **Robust Healthchecks**: Comprehensive health monitoring for all services
 - **Proper Service Dependencies**: Services start only when their dependencies are healthy
 - **Database Readiness Checks**: Explicit polling to ensure database is fully ready before initialization
@@ -90,6 +93,7 @@ This optimized configuration includes several improvements:
 - **Enhanced Connection Parameters**: Optimized settings for better compatibility
 - **Chrome as Default Connection**: Automatically set as the landing page
 - **Audio Streaming Support**: Enabled for better user experience
+- **Container Stability**: Improved restart policies for better reliability
 
 ## Docker Commands Reference
 
