@@ -10,7 +10,8 @@ services:
       POSTGRES_PASSWORD: guacamole_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d
+      # Simplified initialization to avoid script permission issues
+      # - ./init:/docker-entrypoint-initdb.d
     restart: always
     networks:
       - guacamole_network
