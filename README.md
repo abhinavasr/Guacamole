@@ -17,15 +17,17 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
 
 ## Quick Start
 
+### For Windows Users
+
 1. Clone this repository:
    ```bash
    git clone https://github.com/abhinavasr/Guacamole.git
    cd Guacamole
    ```
 
-2. Start the containers:
+2. Run the setup script:
    ```bash
-   docker-compose up -d
+   setup.bat
    ```
 
 3. Access Guacamole at http://localhost:5000/
@@ -34,7 +36,45 @@ This repository contains a Docker Compose setup for Apache Guacamole with Postgr
    - Username: `guacadmin`
    - Password: `guacadmin`
 
-5. The Chrome browser connection will be automatically created and available on the home screen.
+### For Linux/Mac Users
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/abhinavasr/Guacamole.git
+   cd Guacamole
+   ```
+
+2. Make initialization scripts executable:
+   ```bash
+   chmod +x init/*.sh
+   ```
+
+3. Start the containers:
+   ```bash
+   docker-compose up -d
+   ```
+
+4. Access Guacamole at http://localhost:5000/
+
+5. Login with default credentials:
+   - Username: `guacadmin`
+   - Password: `guacadmin`
+
+## Important Note About Script Permissions
+
+If you're working across different operating systems or cloning this repository on a new system, you may need to ensure the initialization scripts are executable:
+
+```bash
+# Make all shell scripts in the init directory executable
+chmod +x init/*.sh
+
+# For Git to track the executable permission
+git update-index --chmod=+x init/00-init-setup.sh
+git update-index --chmod=+x init/init-db.sh
+git update-index --chmod=+x init/prepare-db.sh
+```
+
+This is particularly important when switching between Windows and Linux/Mac environments, as Windows doesn't maintain the executable bit that Linux and Mac require for shell scripts.
 
 ## Key Improvements in This Solution
 
